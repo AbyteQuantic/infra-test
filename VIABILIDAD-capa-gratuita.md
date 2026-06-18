@@ -13,10 +13,9 @@ Resumen de por qué esto corre a **$0** a volumen de prueba, y qué lo vigila.
 | **SNS** | 1.000 emails / mes | Sí | un par de correos |
 | **API Gateway (HTTP API)** | 1M requests / mes | Solo 12 meses | decenas de requests |
 
-> El único que **no** es Always Free es API Gateway HTTP API (gratis 12 meses,
-> luego ~$1.00 por millón de requests). A volumen de demo son centavos, y aun
-> después de los 12 meses el gasto es despreciable. El resto es gratis para
-> siempre.
+El único que no es Always Free es API Gateway HTTP API (gratis 12 meses, luego
+~$1.00 por millón de requests). A volumen de demo son centavos. El resto es
+gratis para siempre.
 
 ## Decisiones tomadas para no salirnos de free tier
 
@@ -47,6 +46,3 @@ Resumen de por qué esto corre a **$0** a volumen de prueba, y qué lo vigila.
 - Precios Lambda: https://aws.amazon.com/lambda/pricing/
 - Precios DynamoDB: https://aws.amazon.com/dynamodb/pricing/on-demand/
 - Precios API Gateway: https://aws.amazon.com/api-gateway/pricing/
-
-> Los números de free tier pueden cambiar; conviene confirmarlos en las páginas
-> oficiales al momento de desplegar.

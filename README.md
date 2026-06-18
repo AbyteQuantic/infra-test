@@ -42,9 +42,9 @@ $EDITOR infra/terraform.tfvars        # pon tu correo real
 `deploy.sh` compila el binario de Go, corre los tests, y hace `terraform apply`.
 Al final imprime el **endpoint de ingesta**.
 
-> **Confirma la suscripción de SNS:** AWS te manda un correo "AWS Notification -
-> Subscription Confirmation" al email que pusiste. Haz clic en *Confirm
-> subscription* o no te llegarán las alertas.
+Tras el primer apply, AWS manda un correo "AWS Notification - Subscription
+Confirmation" al email configurado. Hay que abrirlo y confirmar la suscripción
+para recibir las alertas de SNS.
 
 ## Probar el flujo E2E
 

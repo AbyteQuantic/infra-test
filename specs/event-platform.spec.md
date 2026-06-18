@@ -1,9 +1,7 @@
 # Spec: Plataforma de ingesta y procesamiento de eventos
 
-> Spec-driven: este documento define **qué** debe hacer el sistema y **cómo se
-> verifica**. El código (`app/`) y la infraestructura (`infra/`) se derivan de
-> aquí. Si algo del código no cumple una de estas reglas, el código está mal,
-> no la spec.
+Define qué debe hacer el sistema y cómo se verifica. El código (`app/`) y la
+infraestructura (`infra/`) se derivan de estos requisitos y criterios.
 
 ## 1. Contexto
 

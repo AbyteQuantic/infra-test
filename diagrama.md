@@ -45,6 +45,5 @@ flowchart LR
 5. **CloudWatch** vigila la DLQ y los errores; avisa por **SNS → email**.
 6. **AWS Budgets** avisa si el gasto se acerca al tope.
 
-> Fuente editable: este mismo bloque Mermaid. Si prefieres, se puede exportar a
-> PNG/SVG desde [mermaid.live](https://mermaid.live) o recrear en
-> draw.io/excalidraw con las mismas cajas.
+Fuente del diagrama: el bloque Mermaid de arriba. Para exportarlo a PNG/SVG:
+[mermaid.live](https://mermaid.live).

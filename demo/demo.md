@@ -1,8 +1,8 @@
 # Evidencia de funcionamiento (E2E)
 
-> Plantilla para llenar después de desplegar. Corre `./scripts/e2e-test.sh` y
-> pega aquí las salidas + un par de capturas. Esto cubre los criterios de
-> aceptación de [`specs/event-platform.spec.md`](../specs/event-platform.spec.md).
+Salidas y capturas del flujo completo, generadas con `./scripts/e2e-test.sh`.
+Cubre los criterios de aceptación de
+[`specs/event-platform.spec.md`](../specs/event-platform.spec.md).
 
 ## Contexto
 
@@ -14,20 +14,18 @@
 
 ## Caso 1 — Evento normal se procesa (AC-1)
 
-**Comando:**
 ```bash
 curl -X POST "$ENDPOINT" -H 'content-type: application/json' \
   -d '{"id":"abc-123","type":"pedido","payload":{"monto":50}}'
 ```
 
-**Salida esperada:** respuesta rápida de la API (200).
-
-**Verificación en DynamoDB:**
+Verificación en DynamoDB:
 ```bash
 aws dynamodb get-item --table-name event-platform-events \
   --key '{"id":{"S":"abc-123"}}'
 ```
-> Pega aquí la salida mostrando el item con `processedAt`.
+
+Esperado: respuesta rápida de la API y un item en la tabla con `processedAt`.
 
 _(captura: item en DynamoDB)_
 
@@ -35,20 +33,21 @@ _(captura: item en DynamoDB)_
 
 ## Caso 2 — Idempotencia (AC-2)
 
-Mando el MISMO `id` otra vez:
+Mismo `id` otra vez:
 ```bash
 curl -X POST "$ENDPOINT" -H 'content-type: application/json' \
   -d '{"id":"abc-123","type":"pedido","payload":{"monto":50}}'
 ```
 
-**Verificación en logs:**
+Verificación en logs:
 ```bash
 aws logs tail /aws/lambda/event-platform-processor --since 3m
 ```
-> Debe aparecer: `evento abc-123 ya estaba procesado, lo ignoro (idempotencia)`
-> y en DynamoDB sigue habiendo UN solo item.
 
-_(pega aquí la línea de log)_
+Esperado: en el log aparece `evento abc-123 ya estaba procesado, lo ignoro
+(idempotencia)` y en DynamoDB sigue habiendo un solo item.
+
+_(captura: línea de log)_
 
 ---
 
@@ -65,11 +64,11 @@ Tras ~3 reintentos, el mensaje cae en la DLQ:
 aws sqs get-queue-attributes --queue-url "$DLQ" \
   --attribute-names ApproximateNumberOfMessages
 ```
-> Debe mostrar `ApproximateNumberOfMessages: "1"`.
 
-En los logs se ven los 3 intentos fallando con `forceFail activo...`.
+Esperado: `ApproximateNumberOfMessages: "1"` y en los logs los 3 intentos
+fallando con `forceFail activo...`.
 
-_(captura: mensajes en la DLQ + alarma de CloudWatch en estado ALARM)_
+_(captura: mensajes en la DLQ + alarma en estado ALARM)_
 
 ---
 
@@ -87,4 +86,5 @@ _(captura: correo de alerta / alarma en ALARM)_
 ```bash
 ./scripts/teardown.sh
 ```
-> Pega la confirmación de `Destroy complete!`.
+
+Esperado: `Destroy complete!`.
