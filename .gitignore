@@ -1,0 +1,17 @@
+# Terraform
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Secretos / config local: NO se commitea
+infra/terraform.tfvars
+
+# Build de Go
+app/processor/build/
+
+# OS
+.DS_Store
+
+# NOTA: infra/.terraform.lock.hcl SÍ se commitea (fija versiones de providers).
