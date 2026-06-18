@@ -1,0 +1,6 @@
+# Copia este archivo a terraform.tfvars y pon tus valores.
+# terraform.tfvars está en .gitignore: NO se commitea (no metemos datos al repo).
+
+alert_email        = "tucorreo@ejemplo.com"
+region             = "us-east-1"
+monthly_budget_usd = 1
