@@ -1,8 +1,5 @@
-# La puerta de entrada. Usamos HTTP API (v2) con integración DIRECTA a SQS:
-# API Gateway escribe el cuerpo del request en la cola sin pasar por ningún
-# compute nuestro. Es lo más resiliente para "aceptar rápido y no perder":
-# el evento aterriza en una cola durable de inmediato, sin cold starts ni
-# límites de concurrencia de Lambda en la puerta.
+# Puerta de entrada. HTTP API con integración directa a SQS: escribe el cuerpo
+# en la cola sin compute nuestro de por medio (sin cold starts en la puerta).
 
 resource "aws_apigatewayv2_api" "http" {
   name          = "${var.project_name}-api"
@@ -38,7 +35,7 @@ resource "aws_apigatewayv2_stage" "default" {
   name        = "$default"
   auto_deploy = true
 
-  # Throttling para protegernos de abuso y mantenernos en free tier.
+  # Throttling para acotar abuso y costo.
   default_route_settings {
     throttling_burst_limit = 20
     throttling_rate_limit  = 50

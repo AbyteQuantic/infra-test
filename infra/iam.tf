@@ -1,12 +1,8 @@
-# Identidad de workloads SIN llaves: cada servicio asume un rol IAM con permisos
-# mínimos. No hay access keys ni secretos por ningún lado.
+# Roles IAM por servicio, con permisos mínimos. Sin access keys.
 
 data "aws_caller_identity" "current" {}
 
-# ---------------------------------------------------------------------------
-# Rol que API Gateway asume para escribir en la cola.
-# Solo puede hacer sqs:SendMessage, y solo sobre la cola principal.
-# ---------------------------------------------------------------------------
+# Rol de API Gateway: solo sqs:SendMessage sobre la cola principal.
 data "aws_iam_policy_document" "apigw_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -35,10 +31,7 @@ resource "aws_iam_role_policy" "apigw_sqs" {
   policy = data.aws_iam_policy_document.apigw_sqs.json
 }
 
-# ---------------------------------------------------------------------------
-# Rol de ejecución del Lambda procesador.
-# Lee/borra de la cola principal, escribe SOLO en la tabla, y manda logs.
-# ---------------------------------------------------------------------------
+# Rol del Lambda: consume de la cola, escribe en la tabla, manda logs.
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -55,7 +48,7 @@ resource "aws_iam_role" "lambda" {
 }
 
 data "aws_iam_policy_document" "lambda" {
-  # El event source mapping de SQS necesita estos tres permisos sobre la cola.
+  # Permisos que pide el event source mapping de SQS.
   statement {
     sid = "ConsumeQueue"
     actions = [
@@ -66,14 +59,12 @@ data "aws_iam_policy_document" "lambda" {
     resources = [aws_sqs_queue.main.arn]
   }
 
-  # Escritura idempotente SOLO en nuestra tabla.
   statement {
     sid       = "WriteEvents"
     actions   = ["dynamodb:PutItem"]
     resources = [aws_dynamodb_table.events.arn]
   }
 
-  # Logs en su propio log group.
   statement {
     sid = "Logs"
     actions = [

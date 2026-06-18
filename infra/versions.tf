@@ -11,7 +11,7 @@ terraform {
 provider "aws" {
   region = var.region
 
-  # Etiquetas en TODOS los recursos: facilita ver costos por proyecto y limpiar.
+  # Tags en todos los recursos (costos por proyecto, limpieza).
   default_tags {
     tags = {
       Project   = var.project_name

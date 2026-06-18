@@ -1,5 +1,4 @@
-# Observabilidad: logs (definidos junto a cada recurso) + alarmas que avisan por
-# correo. Lo mínimo para operar: enterarte cuando algo se rompe sin mirar a mano.
+# Alarmas que notifican por correo vía SNS.
 
 resource "aws_sns_topic" "alerts" {
   name = "${var.project_name}-alerts"
@@ -9,11 +8,10 @@ resource "aws_sns_topic_subscription" "email" {
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "email"
   endpoint  = var.alert_email
-  # OJO: AWS manda un correo de confirmación. Hay que aceptarlo para recibir
-  # alertas (ver README).
+  # Requiere confirmar la suscripción por correo (ver README).
 }
 
-# Alarma 1: la DLQ dejó de estar vacía => algo falló de forma repetida (venenoso).
+# DLQ con mensajes => algo falló de forma repetida.
 resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
   alarm_name          = "${var.project_name}-dlq-not-empty"
   namespace           = "AWS/SQS"
@@ -28,7 +26,7 @@ resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
   treat_missing_data  = "notBreaching"
 }
 
-# Alarma 2: el procesador acumula errores.
+# El procesador acumula errores.
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${var.project_name}-lambda-errors"
   namespace           = "AWS/Lambda"

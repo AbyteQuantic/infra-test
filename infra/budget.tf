@@ -1,5 +1,4 @@
-# Alerta de presupuesto: red de seguridad para que esto no se salga de $0 sin
-# que nos enteremos. Avisa al 80% del gasto real y al 100% proyectado.
+# Presupuesto mensual: avisa al 80% (gasto real) y 100% (proyectado).
 
 resource "aws_budgets_budget" "monthly" {
   name         = "${var.project_name}-monthly"

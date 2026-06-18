@@ -1,6 +1,4 @@
-# El procesador: un Lambda en Go (arm64/Graviton, más barato y rápido en frío).
-# Lo dispara SQS y escala solo según la cantidad de mensajes en la cola, de
-# forma totalmente independiente de la recepción.
+# Procesador: Lambda en Go (arm64), disparado por SQS, escala con la cola.
 
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.project_name}-processor"
@@ -11,7 +9,7 @@ resource "aws_lambda_function" "processor" {
   function_name = "${var.project_name}-processor"
   role          = aws_iam_role.lambda.arn
 
-  # Runtime personalizado para Go: el binario se llama "bootstrap".
+  # Runtime de Go: el binario se llama "bootstrap".
   runtime       = "provided.al2023"
   handler       = "bootstrap"
   architectures = ["arm64"]
@@ -22,8 +20,7 @@ resource "aws_lambda_function" "processor" {
   timeout     = 10
   memory_size = 128
 
-  # publish = true crea una versión inmutable en cada deploy -> permite rollback.
-  publish = true
+  publish = true # versión por deploy, para rollback
 
   environment {
     variables = {
@@ -34,16 +31,14 @@ resource "aws_lambda_function" "processor" {
   depends_on = [aws_cloudwatch_log_group.lambda]
 }
 
-# Alias "live": apunta a la versión activa. Para hacer rollback basta mover el
-# alias a la versión anterior (sin redeploy).
+# Alias "live": rollback = mover el alias a la versión anterior.
 resource "aws_lambda_alias" "live" {
   name             = "live"
   function_name    = aws_lambda_function.processor.function_name
   function_version = aws_lambda_function.processor.version
 }
 
-# Conecta la cola con el Lambda. function_response_types habilita el manejo de
-# fallos parciales por mensaje (no reprocesa el lote entero si uno falla).
+# function_response_types habilita el fallo parcial por mensaje.
 resource "aws_lambda_event_source_mapping" "sqs" {
   event_source_arn                   = aws_sqs_queue.main.arn
   function_name                      = aws_lambda_alias.live.arn
