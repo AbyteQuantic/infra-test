@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Go vet + test
+        working-directory: app/processor
+        run: |
+          go mod tidy
+          go vet ./...
+          go test ./... -cover
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt + validate
+        working-directory: infra
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
