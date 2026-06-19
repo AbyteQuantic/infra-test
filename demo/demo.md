@@ -1,14 +1,15 @@
 # Evidencia de funcionamiento (E2E)
 
-Salidas y capturas del flujo completo, generadas con `./scripts/e2e-test.sh`.
-Cubre los criterios de aceptación de
+Salidas reales del flujo completo desplegado en AWS (`us-east-1`). Cubre los
+criterios de aceptación de
 [`specs/event-platform.spec.md`](../specs/event-platform.spec.md).
 
 ## Contexto
 
 - Región: `us-east-1`
-- Endpoint: `https://xxxxx.execute-api.us-east-1.amazonaws.com/events`
-- Fecha de la prueba: `____`
+- Endpoint: `https://x8568m1jrb.execute-api.us-east-1.amazonaws.com/events`
+- Cuenta: `2118XXXXXXXX`
+- Fecha de la prueba: 2026-06-19
 
 ---
 
@@ -16,16 +17,38 @@ Cubre los criterios de aceptación de
 
 ```bash
 curl -X POST "$ENDPOINT" -H 'content-type: application/json' \
-  -d '{"id":"abc-123","type":"pedido","payload":{"monto":50}}'
+  -d '{"id":"evt-demo-1","type":"pedido","payload":{"monto":50}}'
+```
+
+La API responde rápido (encola en SQS):
+```xml
+<SendMessageResponse>
+  <SendMessageResult>
+    <MessageId>846014b7-05aa-4be1-ba78-2e6bb4bb09de</MessageId>
+  </SendMessageResult>
+</SendMessageResponse>
 ```
 
 Verificación en DynamoDB:
 ```bash
 aws dynamodb get-item --table-name event-platform-events \
-  --key '{"id":{"S":"abc-123"}}'
+  --key '{"id":{"S":"evt-demo-1"}}'
+```
+```json
+{
+    "Item": {
+        "payload":     { "S": "{\"monto\":50}" },
+        "processedAt": { "S": "2026-06-19T14:56:12Z" },
+        "id":          { "S": "evt-demo-1" },
+        "type":        { "S": "pedido" }
+    }
+}
 ```
 
-Esperado: respuesta rápida de la API y un item en la tabla con `processedAt`.
+Log del procesador:
+```
+2026/06/19 14:56:13 evento evt-demo-1 procesado y guardado
+```
 
 _(captura: item en DynamoDB)_
 
@@ -36,16 +59,14 @@ _(captura: item en DynamoDB)_
 Mismo `id` otra vez:
 ```bash
 curl -X POST "$ENDPOINT" -H 'content-type: application/json' \
-  -d '{"id":"abc-123","type":"pedido","payload":{"monto":50}}'
+  -d '{"id":"evt-demo-1","type":"pedido","payload":{"monto":50}}'
 ```
 
-Verificación en logs:
-```bash
-aws logs tail /aws/lambda/event-platform-processor --since 3m
+El procesador detecta el duplicado y no lo vuelve a guardar:
 ```
-
-Esperado: en el log aparece `evento abc-123 ya estaba procesado, lo ignoro
-(idempotencia)` y en DynamoDB sigue habiendo un solo item.
+2026/06/19 14:59:20 evento evt-demo-1 ya estaba procesado, lo ignoro (idempotencia)
+```
+En DynamoDB sigue habiendo un solo item.
 
 _(captura: línea de log)_
 
@@ -56,28 +77,49 @@ _(captura: línea de log)_
 Evento venenoso:
 ```bash
 curl -X POST "$ENDPOINT" -H 'content-type: application/json' \
-  -d '{"id":"veneno-1","forceFail":true}'
+  -d '{"id":"poison-demo-1","forceFail":true}'
 ```
 
-Tras ~3 reintentos, el mensaje cae en la DLQ:
+El procesador falla en cada intento (3 reintentos, ~60s entre cada uno por el
+visibility timeout):
+```
+2026/06/19 14:56:13 fallo procesando messageId=431ab391-...: forceFail activo para el evento poison-demo-1
+2026/06/19 14:57:14 fallo procesando messageId=431ab391-...: forceFail activo para el evento poison-demo-1
+2026/06/19 14:58:13 fallo procesando messageId=431ab391-...: forceFail activo para el evento poison-demo-1
+```
+
+Tras agotar los reintentos, el mensaje cae en la DLQ:
 ```bash
 aws sqs get-queue-attributes --queue-url "$DLQ" \
   --attribute-names ApproximateNumberOfMessages
 ```
+```json
+{ "Attributes": { "ApproximateNumberOfMessages": "1" } }
+```
 
-Esperado: `ApproximateNumberOfMessages: "1"` y en los logs los 3 intentos
-fallando con `forceFail activo...`.
-
-_(captura: mensajes en la DLQ + alarma en estado ALARM)_
+_(captura: mensajes en la DLQ)_
 
 ---
 
-## Caso 4 — Alerta (AC-5)
+## Caso 4 — Alarma y alerta (AC-5)
 
-Cuando la DLQ deja de estar vacía, la alarma `event-platform-dlq-not-empty`
-pasa a `ALARM` y SNS manda correo.
+La métrica de la DLQ cruza el umbral y la alarma pasa a `ALARM`:
+```bash
+aws cloudwatch describe-alarms --alarm-name-prefix event-platform \
+  --query 'MetricAlarms[].{Nombre:AlarmName,Estado:StateValue}'
+```
+```
+event-platform-dlq-not-empty   ALARM
+event-platform-lambda-errors   OK
+```
 
-_(captura: correo de alerta / alarma en ALARM)_
+> Nota: `lambda-errors` se queda en `OK` a propósito. El procesador no se cae
+> con el venenoso: lo maneja con `ReportBatchItemFailures` y reporta solo ese
+> mensaje como fallido, así que la métrica de errores de la función es 0.
+
+La alarma notifica por SNS → correo al operador (`abytecorp@gmail.com`).
+
+_(captura: alarma en ALARM + correo de alerta recibido)_
 
 ---
 
@@ -87,4 +129,4 @@ _(captura: correo de alerta / alarma en ALARM)_
 ./scripts/teardown.sh
 ```
 
-Esperado: `Destroy complete!`.
+Esperado: `Destroy complete!` — no quedan recursos facturables.
