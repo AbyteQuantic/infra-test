@@ -50,7 +50,9 @@ Log del procesador:
 2026/06/19 14:56:13 evento evt-demo-1 procesado y guardado
 ```
 
-_(captura: item en DynamoDB)_
+![Item en DynamoDB](dynamoDB.png)
+
+![Invocaciones del Lambda procesador](lambda.png)
 
 ---
 
@@ -67,8 +69,6 @@ El procesador detecta el duplicado y no lo vuelve a guardar:
 2026/06/19 14:59:20 evento evt-demo-1 ya estaba procesado, lo ignoro (idempotencia)
 ```
 En DynamoDB sigue habiendo un solo item.
-
-_(captura: línea de log)_
 
 ---
 
@@ -97,7 +97,7 @@ aws sqs get-queue-attributes --queue-url "$DLQ" \
 { "Attributes": { "ApproximateNumberOfMessages": "1" } }
 ```
 
-_(captura: mensajes en la DLQ)_
+![Colas SQS: cola principal + DLQ](sqs.png)
 
 ---
 
@@ -119,7 +119,7 @@ event-platform-lambda-errors   OK
 
 La alarma notifica por SNS → correo al operador (`abytecorp@gmail.com`).
 
-_(captura: alarma en ALARM + correo de alerta recibido)_
+![Alarma event-platform-dlq-not-empty en estado ALARM](cloudwatch.png)
 
 ---
 
